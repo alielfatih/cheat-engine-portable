@@ -19,20 +19,22 @@ jobs:
         with:
           lazarus-version: '2.2.6'
 
+      - name: Verify lazbuild on PATH
+        shell: cmd
+        run: |
+          where lazbuild
+
       - name: Compile Cheat Engine using lazbuild CLI
-        # Revert to simple CMD call, trusting the action to have set the PATH correctly
         shell: cmd
         working-directory: .
         run: |
           echo "Attempting to build Cheat Engine project..."
-          REM This line should now work if the PATH variable is correctly set
           call lazbuild "Cheat Engine\cheatengine.lpi"
 
       - name: Create Portable Archive
+        working-directory: Chear Engine\bin
         run: |
-          Write-Output "Creating portable archive..."
-          # Use powershell for the archive command
-          Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
+          powershell Compress-Archive -Path * -DestinationPath ../../CheatEngine_Portable.zip -Force
 
       - name: Upload portable version as an artifact
         uses: actions/upload-artifact@v4
