@@ -8,31 +8,34 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-2022 # Using Windows Server 2022
+    runs-on: windows-2022
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Lazarus and FPC
-        # This action version requires direct download URLs for laz-url and fpc-url
-        uses: ollydev/setup-lazarus@v1 
+      # --- Updated Lazarus/FPC Installation Step ---
+      - name: Install Lazarus and FPC (using DelphiPraxis action)
+        uses: delphipraxis/setup-lazarus@v1
         with:
-          # URLs for a compatible Windows 64-bit installer package
-          laz-url: https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%202.2.2/lazarus-2.2.2-fpc-3.2.2-win64.exe
-          fpc-url: "" # FPC is bundled in the provided Lazarus EXE for Windows, so fpc-url can be empty
+          lazarus-version: '2.2.6' # Use a slightly newer, stable version
+          fpc-version: '3.2.2'
+      # ----------------------------------------------
 
       - name: Compile Cheat Engine using lazbuild CLI
-        shell: cmd
+        # We need to run this via a specific shell that ensures paths are loaded correctly
+        shell: powershell
         working-directory: .
         run: |
-          # The lazbuild command is used to compile Lazarus projects from the command line
+          Write-Output "Attempting to build Cheat Engine project..."
+          # The lazbuild executable should now be correctly added to the PATH by the setup action
           lazbuild "Cheat Engine\cheatengine.lpi"
 
       - name: Create Portable Archive
         run: |
+          Write-Output "Creating portable archive..."
           # Use powershell to create a ZIP archive of the compiled 'bin' folder
-          Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip"
+          Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
 
       - name: Upload portable version as an artifact
         uses: actions/upload-artifact@v4
