@@ -60,22 +60,3 @@ jobs:
             DotNetcompiler\bin\Release\*
             monodatacollector\bin\Release\*
             # Add other paths accordingly
-        shell: cmd
-        run: where lazbuild
-
-      - name: Build Cheat Engine
-        shell: cmd
-        run: |
-          echo Building Cheat Engine project...
-          call lazbuild "cheatengine.lpi"
-
-      - name: Package Portable ZIP
-        shell: powershell
-        run: Compress-Archive -Path "bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
-
-      - name: Upload built artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CheatEngine-Portable-Windows
-          path: CheatEngine_Portable.zip
-          retention-days: 7
