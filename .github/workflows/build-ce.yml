@@ -14,25 +14,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Use the reliable 'gcarreno' action, simplified inputs ---
       - name: Install Lazarus and FPC
         uses: gcarreno/setup-lazarus@v1
         with:
-          lazarus-version: '2.2.6' # Only this input is required.
-      # -------------------------------------------
+          lazarus-version: '2.2.6'
 
       - name: Compile Cheat Engine using lazbuild CLI
-        # Use the CMD shell, cleaned up comments
-        shell: cmd
+        # Use PowerShell to ensure environment variables are correctly accessed
+        shell: powershell
         working-directory: .
         run: |
-          echo "Attempting to build Cheat Engine project..."
-          call lazbuild "Cheat Engine\cheatengine.lpi"
+          Write-Output "Attempting to build Cheat Engine project..."
+          
+          # We manually construct the path to lazbuild.exe based on where the action installs it
+          $lazarusDir = "C:\lazarus\"
+          $lazbuildPath = Join-Path $lazarusDir "lazbuild.exe"
+          
+          if (Test-Path $lazbuildPath) {
+              Write-Output "Found lazbuild at: $lazbuildPath"
+              # Execute lazbuild with the project file argument
+              & $lazbuildPath "Cheat Engine\cheatengine.lpi"
+          } else {
+              Write-Error "lazbuild.exe not found at $lazbuildPath"
+              exit 1
+          }
 
       - name: Create Portable Archive
         run: |
           Write-Output "Creating portable archive..."
-          # Use powershell for the archive command
           Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
 
       - name: Upload portable version as an artifact
