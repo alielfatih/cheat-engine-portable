@@ -19,8 +19,7 @@ jobs:
         with:
           lazarus-version: '2.2.6'
 
-      # Add lazbuild to PATH by searching known installation folders (adjust version folder as needed)
-      - name: Add Lazarus lazbuild to PATH
+      - name: Add lazbuild directory to PATH
         shell: powershell
         run: |
           $pathsToCheck = @(
@@ -40,24 +39,88 @@ jobs:
             exit 1
           }
           Write-Output "Found lazbuild in $foundPath"
-          # Add path to workflow PATH
+          # Add path to workflow PATH for next steps
           "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Verify lazbuild on PATH
+      - name: Confirm lazbuild on PATH
         shell: cmd
         run: where lazbuild
 
-      - name: Compile Cheat Engine using lazbuild CLI
+      - name: Build Cheat Engine Project
         shell: cmd
         run: |
-          echo "Building Cheat Engine..."
-          call lazbuild "Cheat Engine\cheatengine.lpi"
+          echo Building Cheat Engine project...
+          call lazbuild "cheatengine.lpi"
 
-      - name: Create Portable Archive
+      - name: Package Portable ZIP
         shell: powershell
-        run: Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
+        run: Compress-Archive -Path "bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
 
-      - name: Upload portable version as an artifact
+      - name: Upload Portable Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CheatEngine-Portable-Windows
+          path: CheatEngine_Portable.zip
+          retention-days: 7
+name: Build Cheat Engine Portable
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Lazarus and FPC
+        uses: gcarreno/setup-lazarus@v1
+        with:
+          lazarus-version: '2.2.6'
+
+      - name: Add lazbuild directory to PATH
+        shell: powershell
+        run: |
+          $pathsToCheck = @(
+            "C:\lazarus\lazarus-2.2.6\lazarus\bin\i386-win32",
+            "C:\lazarus\lazarus-2.2.6\bin",
+            "C:\lazarus\bin"
+          )
+          $foundPath = $null
+          foreach ($p in $pathsToCheck) {
+            if (Test-Path (Join-Path $p "lazbuild.exe")) {
+              $foundPath = $p
+              break
+            }
+          }
+          if ($foundPath -eq $null) {
+            Write-Error "lazbuild.exe not found in expected locations."
+            exit 1
+          }
+          Write-Output "Found lazbuild in $foundPath"
+          # Add path to workflow PATH for next steps
+          "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Confirm lazbuild on PATH
+        shell: cmd
+        run: where lazbuild
+
+      - name: Build Cheat Engine Project
+        shell: cmd
+        run: |
+          echo Building Cheat Engine project...
+          call lazbuild "cheatengine.lpi"
+
+      - name: Package Portable ZIP
+        shell: powershell
+        run: Compress-Archive -Path "bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
+
+      - name: Upload Portable Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CheatEngine-Portable-Windows
