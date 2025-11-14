@@ -8,25 +8,25 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-2022 # Using Windows Server 2022
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Lazarus and FPC (uses a third-party action)
-        # This action automates the complex installation of Lazarus/FPC environment
-        uses: ollydev/setup-lazarus@v1
+      - name: Install Lazarus and FPC
+        # This action version requires direct download URLs for laz-url and fpc-url
+        uses: ollydev/setup-lazarus@v1 
         with:
-          lazarus-version: '2.2.2' # Specify a compatible version
-          fpc-version: '3.2.2'
-          
+          # URLs for a compatible Windows 64-bit installer package
+          laz-url: https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%202.2.2/lazarus-2.2.2-fpc-3.2.2-win64.exe
+          fpc-url: "" # FPC is bundled in the provided Lazarus EXE for Windows, so fpc-url can be empty
+
       - name: Compile Cheat Engine using lazbuild CLI
         shell: cmd
-        working-directory: . # The root directory of the checked-out source code
+        working-directory: .
         run: |
           # The lazbuild command is used to compile Lazarus projects from the command line
-          # We run the command within the 'Cheat Engine' subdirectory where the .lpi file is located.
           lazbuild "Cheat Engine\cheatengine.lpi"
 
       - name: Create Portable Archive
