@@ -1,39 +1,65 @@
-name: Build Cheat Engine Portable
+name: Build Cheat Engine Portable and Installer
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-windows:
-    runs-on: windows-2022
-
+  build-portable:
+    runs-on: windows-latest
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v3
 
-      - name: Install Lazarus and FPC
-        uses: gcarreno/setup-lazarus@v1
+      - name: Setup Lazarus 2.2.2 environment
+        uses: sxmxta/lazarus@v1
         with:
-          lazarus-version: '2.2.6'
+          lazarus-version: '2.2.2'
+          include-packages: ''
+          with-cache: true
 
-      - name: Find lazbuild path and add to PATH
-        shell: powershell
+      - name: Build portable executable with lazbuild
         run: |
-          Write-Output "Searching for lazbuild.exe under C:\lazarus ..."
-          $lazbuildExe = Get-ChildItem -Path 'C:\lazarus' -Filter 'lazbuild.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($null -eq $lazbuildExe) {
-            Write-Error "ERROR: lazbuild.exe not found under C:\lazarus"
-            exit 1
-          }
-          $lazbuildDir = $lazbuildExe.Directory.FullName
-          Write-Output "Found lazbuild.exe in $lazbuildDir"
-          # Add this folder to PATH for next steps
-          "$lazbuildDir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          cd Cheat\ Engine
+          lazbuild cheatengine.lpi --build-mode=Release
 
-      - name: Verify lazbuild on PATH
+      - name: Upload portable build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cheatengine-portable
+          path: Cheat\ Engine\bin\Release\*
+
+  build-installer:
+    runs-on: windows-latest
+    needs: build-portable
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Visual Studio environment
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build installer solutions
+        run: |
+          # Build one or more .sln installer projects if available
+          msbuild DirectXMess.sln /p:Configuration=Release
+          msbuild DotNetcompiler.sln /p:Configuration=Release
+          msbuild monodatacollector.sln /p:Configuration=Release
+          # Add other installer SLN projects as needed
+
+      - name: Upload installer build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cheatengine-installer
+          path: |
+            DirectXMess\bin\Release\*
+            DotNetcompiler\bin\Release\*
+            monodatacollector\bin\Release\*
+            # Add other paths accordingly
         shell: cmd
         run: where lazbuild
 
