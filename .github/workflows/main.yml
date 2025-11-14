@@ -1,0 +1,62 @@
+name: Build Cheat Engine Portable and Installer
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-portable:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Lazarus 2.2.2 environment
+        uses: sxmxta/lazarus@v1
+        with:
+          lazarus-version: '2.2.2'
+          include-packages: ''
+          with-cache: true
+
+      - name: Build portable executable with lazbuild
+        run: |
+          cd Cheat\ Engine
+          lazbuild cheatengine.lpi --build-mode=Release
+
+      - name: Upload portable build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cheatengine-portable
+          path: Cheat\ Engine\bin\Release\*
+
+  build-installer:
+    runs-on: windows-latest
+    needs: build-portable
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Visual Studio environment
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build installer solutions
+        run: |
+          # Build one or more .sln installer projects if available
+          msbuild DirectXMess.sln /p:Configuration=Release
+          msbuild DotNetcompiler.sln /p:Configuration=Release
+          msbuild monodatacollector.sln /p:Configuration=Release
+          # Add other installer SLN projects as needed
+
+      - name: Upload installer build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cheatengine-installer
+          path: |
+            DirectXMess\bin\Release\*
+            DotNetcompiler\bin\Release\*
+            monodatacollector\bin\Release\*
+            # Add other paths accordingly
