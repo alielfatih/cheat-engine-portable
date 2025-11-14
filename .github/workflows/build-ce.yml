@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
   build-windows:
@@ -14,27 +14,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Updated Lazarus/FPC Installation Step ---
-      - name: Install Lazarus and FPC (using DelphiPraxis action)
-        uses: delphipraxis/setup-lazarus@v1
+      # --- Use the reliable 'gcarreno' action ---
+      - name: Install Lazarus and FPC
+        uses: gcarreno/setup-lazarus@v1 # This action is available and functional
         with:
-          lazarus-version: '2.2.6' # Use a slightly newer, stable version
+          lazarus-version: '2.2.6'
           fpc-version: '3.2.2'
-      # ----------------------------------------------
+      # -------------------------------------------
 
       - name: Compile Cheat Engine using lazbuild CLI
-        # We need to run this via a specific shell that ensures paths are loaded correctly
-        shell: powershell
+        # Use the CMD shell again, but without internal comments that caused issues before
+        shell: cmd
         working-directory: .
         run: |
-          Write-Output "Attempting to build Cheat Engine project..."
-          # The lazbuild executable should now be correctly added to the PATH by the setup action
-          lazbuild "Cheat Engine\cheatengine.lpi"
+          echo "Attempting to build Cheat Engine project..."
+          call lazbuild "Cheat Engine\cheatengine.lpi"
 
       - name: Create Portable Archive
         run: |
           Write-Output "Creating portable archive..."
-          # Use powershell to create a ZIP archive of the compiled 'bin' folder
+          # Use powershell for the archive command
           Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip" -Force
 
       - name: Upload portable version as an artifact
