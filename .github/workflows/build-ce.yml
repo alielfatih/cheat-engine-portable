@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -14,16 +14,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Use the reliable 'gcarreno' action ---
+      # --- Use the reliable 'gcarreno' action, simplified inputs ---
       - name: Install Lazarus and FPC
-        uses: gcarreno/setup-lazarus@v1 # This action is available and functional
+        uses: gcarreno/setup-lazarus@v1
         with:
-          lazarus-version: '2.2.6'
-          fpc-version: '3.2.2'
+          lazarus-version: '2.2.6' # Only this input is required.
       # -------------------------------------------
 
       - name: Compile Cheat Engine using lazbuild CLI
-        # Use the CMD shell again, but without internal comments that caused issues before
+        # Use the CMD shell, cleaned up comments
         shell: cmd
         working-directory: .
         run: |
