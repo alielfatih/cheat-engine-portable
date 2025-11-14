@@ -1,0 +1,42 @@
+name: Build Cheat Engine Portable
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-2019 # Using windows-2019 due to potential DLL path issues with newer runners
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Lazarus and FPC (uses a third-party action)
+        # This action automates the complex installation of Lazarus/FPC environment
+        uses: ollydev/setup-lazarus@v1
+        with:
+          lazarus-version: '2.2.2' # Specify a compatible version
+          fpc-version: '3.2.2'
+          
+      - name: Compile Cheat Engine using lazbuild CLI
+        shell: cmd
+        working-directory: . # The root directory of the checked-out source code
+        run: |
+          # The lazbuild command is used to compile Lazarus projects from the command line
+          # We run the command within the 'Cheat Engine' subdirectory where the .lpi file is located.
+          lazbuild "Cheat Engine\cheatengine.lpi"
+
+      - name: Create Portable Archive
+        run: |
+          # Use powershell to create a ZIP archive of the compiled 'bin' folder
+          Compress-Archive -Path "Cheat Engine\bin\*" -DestinationPath "CheatEngine_Portable.zip"
+
+      - name: Upload portable version as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CheatEngine-Portable-Windows
+          path: CheatEngine_Portable.zip
+          retention-days: 7
