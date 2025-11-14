@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  # Enable manual run
+  workflow_dispatch:
 
 jobs:
   build-portable:
@@ -17,19 +17,17 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Lazarus 2.2.2 via Chocolatey
-        run: |
-          choco install lazarus --version=2.2.2 -y
+        run: choco install lazarus --version=2.2.2 -y
 
       - name: Build portable executable with lazbuild
-        run: |
-          cd Cheat\ Engine
-          lazbuild cheatengine.lpi --build-mode=Release
+        working-directory: Cheat Engine
+        run: lazbuild cheatengine.lpi --build-mode=Release
 
       - name: Upload portable build artifact
         uses: actions/upload-artifact@v4
         with:
           name: cheatengine-portable
-          path: Cheat\ Engine\bin\Release\*
+          path: Cheat Engine/bin/Release/*
 
   build-installer:
     runs-on: windows-latest
@@ -52,6 +50,6 @@ jobs:
         with:
           name: cheatengine-installer
           path: |
-            DirectXMess\bin\Release\*
-            DotNetcompiler\bin\Release\*
-            monodatacollector\bin\Release\*
+            DirectXMess/bin/Release/*
+            DotNetcompiler/bin/Release/*
+            monodatacollector/bin/Release/*
