@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  # This enables the Run workflow button
+  workflow_dispatch:  # Enable manual run
 
 jobs:
   build-portable:
@@ -16,12 +16,9 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Setup Lazarus 2.2.2 environment
-        uses: sxmxta/lazarus@v1
-        with:
-          lazarus-version: '2.2.2'
-          include-packages: ''
-          with-cache: true
+      - name: Install Lazarus 2.2.2 via Chocolatey
+        run: |
+          choco install lazarus --version=2.2.2 -y
 
       - name: Build portable executable with lazbuild
         run: |
@@ -29,7 +26,7 @@ jobs:
           lazbuild cheatengine.lpi --build-mode=Release
 
       - name: Upload portable build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cheatengine-portable
           path: Cheat\ Engine\bin\Release\*
@@ -41,23 +38,20 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Setup Visual Studio environment
+      - name: Setup Visual Studio MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Build installer solutions
+      - name: Build installer solutions with msbuild
         run: |
-          # Build one or more .sln installer projects if available
           msbuild DirectXMess.sln /p:Configuration=Release
           msbuild DotNetcompiler.sln /p:Configuration=Release
           msbuild monodatacollector.sln /p:Configuration=Release
-          # Add other installer SLN projects as needed
 
       - name: Upload installer build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cheatengine-installer
           path: |
             DirectXMess\bin\Release\*
             DotNetcompiler\bin\Release\*
             monodatacollector\bin\Release\*
-            # Add other paths accordingly
