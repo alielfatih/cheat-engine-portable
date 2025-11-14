@@ -7,19 +7,27 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # Enable manual workflow runs
 
 jobs:
   build-portable:
     runs-on: windows-latest
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Install Lazarus 2.2.2 via Chocolatey
         run: choco install lazarus --version=2.2.2 -y
 
-      - name: Build portable executable with lazbuild
+      - name: Add lazbuild to PATH
+        shell: pwsh
+        run: |
+          $lazbuildPath = "C:\ProgramData\chocolatey\lib\lazarus\tools\lazarus\2.2.2"
+          Write-Host "Adding lazbuild path: $lazbuildPath"
+          $env:Path = "$lazbuildPath;$env:Path"
+          Write-Output $env:Path
+
+      - name: Build portable executable
         working-directory: Cheat Engine
         run: lazbuild cheatengine.lpi --build-mode=Release
 
@@ -33,13 +41,13 @@ jobs:
     runs-on: windows-latest
     needs: build-portable
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Visual Studio MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Build installer solutions with msbuild
+      - name: Build installer solutions
         run: |
           msbuild DirectXMess.sln /p:Configuration=Release
           msbuild DotNetcompiler.sln /p:Configuration=Release
